@@ -7,9 +7,23 @@ Etapa 1: base/estrutura. Etapa 2: funcionalidades principais (CRUDs, status auto
 farm-ts: FastAPI + motor/MongoDB (backend, `/api`) · Vite + React 19 + TS strict + Tailwind v4 + shadcn (frontend).
 
 ## Auth
-E-mail + senha (PBKDF2-SHA256). Sessão = token opaco em cookie httpOnly `cp_session` (30 dias),
-coleção `sessions`. `GET /api/auth/session` devolve `UserPublic | null` (não lança) e é a fonte
-do estado de auth no frontend (`src/lib/session.ts`). Logout sempre via `endSession()`.
+E-mail + senha (PBKDF2-SHA256). Sessão = token opaco em cookie httpOnly `cp_session` (30 dias,
+**janela deslizante**: `optional_user` renova a expiração enquanto a sessão é usada), coleção
+`sessions`. `GET /api/auth/session` devolve `UserPublic | null`.
+
+**Estado de auth (`src/lib/session.ts`) é de 4 valores, não booleano** — `useAuthStatus()`:
+- `loading` → splash
+- `authenticated` → renderiza
+- `unauthenticated` (body null ou 401/403 explícito) → **único caso** que redireciona para `/login`
+- `error` (offline/5xx/cold start) → tela "Tentar novamente", **nunca** desloga
+
+Isso corrige o bug de voltar para `/login` com sessão válida. A query de sessão usa
+`retry: 2` (um blip de rede não é logout) e `refetchOnWindowFocus: false`.
+`beginSession(user)` grava no cache de forma síncrona e **não** é aguardado antes do
+`navigate()` — um refetch lento/com erro não pode prender o usuário no login.
+`endSession()` remove os caches de dados e só então faz `setQueryData(SESSION_KEY, null)`
+(nessa ordem: `queryClient.clear()` removeria os observers e a guarda não redirecionaria).
+Logout exige **confirmação explícita** no diálogo `logout-confirm-dialog`.
 Recuperação de senha é **MOCKED**: `POST /api/auth/forgot-password` devolve o código na resposta.
 
 **Isolamento**: toda query de clients/payments/charges filtra por `user_id` da sessão. Nenhum

@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiPost } from "@/lib/api";
-import { useSession, useSessionActions } from "@/lib/session";
+import { useAuthStatus, useSessionActions } from "@/lib/session";
 import { SEGMENTOS } from "@/lib/types";
 import type { UserPublic } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ const STEPS = [
 ] as const;
 
 export default function Onboarding() {
-  const { data: user, isLoading, isError } = useSession();
+  const { status, user } = useAuthStatus();
   const { beginSession } = useSessionActions();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -41,22 +41,22 @@ export default function Onboarding() {
 
   const mutation = useMutation({
     mutationFn: () => apiPost<UserPublic>("/auth/onboarding", form),
-    onSuccess: async (updated) => {
-      await beginSession(updated);
+    onSuccess: (updated) => {
+      beginSession(updated);
       toast.success("Tudo pronto! Bem-vindo ao ClientePro.");
       navigate("/app/dashboard", { replace: true });
     },
     onError: () => toast.error("Não foi possível salvar os dados"),
   });
 
-  if (isLoading) {
+  if (status === "loading" || status === "error") {
     return (
-      <div className="grid min-h-dvh place-items-center bg-slate-50">
+      <div className="grid min-h-dvh place-items-center bg-slate-50" data-testid="onboarding-loading">
         <Logo />
       </div>
     );
   }
-  if (isError || !user) return <Navigate to="/login" replace />;
+  if (status === "unauthenticated" || !user) return <Navigate to="/login" replace />;
   if (user.onboarded) return <Navigate to="/app/dashboard" replace />;
 
   const current = STEPS[step];

@@ -27,8 +27,8 @@ export default function Register() {
 
   const mutation = useMutation({
     mutationFn: () => apiPost<UserPublic>("/auth/register", { email, password }),
-    onSuccess: async (user) => {
-      await beginSession(user);
+    onSuccess: (user) => {
+      beginSession(user);
       toast.success("Conta criada! Vamos configurar seu negócio.");
       navigate("/onboarding", { replace: true });
     },

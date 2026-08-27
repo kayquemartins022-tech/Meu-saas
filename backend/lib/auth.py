@@ -62,13 +62,22 @@ async def optional_user(request: Request) -> Optional[dict]:
     session = await db.sessions.find_one({"token": token})
     if not session:
         return None
+    now = datetime.now(timezone.utc)
     expires = session.get("expires_at")
     if isinstance(expires, datetime):
+        # BSON hands back naive datetimes; normalise before comparing against an aware now.
         if expires.tzinfo is None:
             expires = expires.replace(tzinfo=timezone.utc)
-        if expires < datetime.now(timezone.utc):
+        if expires < now:
             await db.sessions.delete_many({"token": token})
             return None
+        # Sliding window: an actively used session keeps renewing so it never expires
+        # under the user while they are working.
+        if expires - now < timedelta(days=SESSION_DAYS - 1):
+            await db.sessions.update_one(
+                {"token": token},
+                {"$set": {"expires_at": now + timedelta(days=SESSION_DAYS)}},
+            )
     user = await db.users.find_one({"id": session["user_id"]})
     return user
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Link, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   BarChart3,
@@ -13,7 +14,15 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { useSession, useSessionActions } from "@/lib/session";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAuthStatus, useSessionActions } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -53,11 +62,12 @@ export default function AppShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { data: user, isLoading, isError } = useSession();
-  const { endSession } = useSessionActions();
+  const { status, user } = useAuthStatus();
+  const { endSession, refreshSession } = useSessionActions();
   const location = useLocation();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="grid min-h-dvh place-items-center bg-slate-50" data-testid="shell-loading">
         <div className="flex flex-col items-center gap-4">
@@ -68,7 +78,31 @@ export default function AppShell({
     );
   }
 
-  if (isError || !user) {
+  // Transport failure — the session may be perfectly valid, so we must NOT log the user
+  // out. Offer a retry instead of bouncing to /login.
+  if (status === "error") {
+    return (
+      <div className="grid min-h-dvh place-items-center bg-slate-50 px-6" data-testid="shell-offline">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-7 text-center">
+          <Logo className="mx-auto" />
+          <p className="mt-5 text-sm font-bold text-slate-900">Não conseguimos falar com o servidor</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Sua sessão continua ativa. Verifique a conexão e tente novamente.
+          </p>
+          <Button
+            data-testid="shell-retry-button"
+            onClick={() => void refreshSession()}
+            className="mt-6 h-11 w-full rounded-xl bg-indigo-700 font-bold text-white hover:bg-indigo-800"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Only an explicit "nobody is logged in" sends the user to /login.
+  if (status === "unauthenticated" || !user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
@@ -130,7 +164,7 @@ export default function AppShell({
             variant="ghost"
             size="sm"
             data-testid="sidebar-logout-button"
-            onClick={() => void endSession()}
+            onClick={() => setConfirmLogout(true)}
             className="w-full justify-start gap-2 text-slate-400 hover:bg-slate-800 hover:text-rose-400"
           >
             <LogOut className="size-4" /> Sair da conta
@@ -157,7 +191,7 @@ export default function AppShell({
             type="button"
             aria-label="Sair da conta"
             data-testid="mobile-logout-button"
-            onClick={() => void endSession()}
+            onClick={() => setConfirmLogout(true)}
             className="grid size-11 place-items-center rounded-xl text-slate-600 transition-colors duration-150 active:bg-slate-100"
           >
             <LogOut className="size-5" />
@@ -210,6 +244,40 @@ export default function AppShell({
           ))}
         </div>
       </nav>
+
+      {/* Logout only ever happens through an explicit confirmation — an accidental tap
+          on the header icon must never end a valid session. */}
+      <Dialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <DialogContent className="sm:max-w-sm" data-testid="logout-confirm-dialog">
+          <DialogHeader>
+            <DialogTitle>Sair da conta</DialogTitle>
+            <DialogDescription>
+              Você será desconectado e voltará para a tela de login. Deseja continuar?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              data-testid="logout-cancel-button"
+              onClick={() => setConfirmLogout(false)}
+              className="h-11 rounded-xl font-semibold"
+            >
+              Continuar conectado
+            </Button>
+            <Button
+              variant="destructive"
+              data-testid="logout-confirm-button"
+              onClick={() => {
+                setConfirmLogout(false);
+                void endSession();
+              }}
+              className="h-11 rounded-xl font-bold"
+            >
+              Sair
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -26,8 +26,10 @@ export default function Login() {
 
   const mutation = useMutation({
     mutationFn: () => apiPost<UserPublic>("/auth/login", { email, password }),
-    onSuccess: async (user) => {
-      await beginSession(user);
+    onSuccess: (user) => {
+      // Seed the cache and navigate in the same tick — never await background refetches
+      // here, or a slow/failing one strands the user on the login screen.
+      beginSession(user);
       toast.success("Bem-vindo de volta!");
       navigate(user.onboarded ? "/app/dashboard" : "/onboarding", { replace: true });
     },

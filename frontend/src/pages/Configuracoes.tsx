@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiPut } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { SESSION_KEY, useSession, useSessionActions } from "@/lib/session";
 import { SEGMENTOS } from "@/lib/types";
 import type { SettingsInput, UserPublic } from "@/lib/types";
@@ -49,7 +50,7 @@ export default function Configuracoes() {
       await qc.invalidateQueries({ queryKey: SESSION_KEY });
       toast.success("Dados atualizados");
     },
-    onError: () => toast.error("Não foi possível salvar os dados"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível salvar os dados")),
   });
 
   return (

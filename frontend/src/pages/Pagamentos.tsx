@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiDelete, apiGet } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { brl, fullDate, todayIso } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/types";
 import type { MessageOut, Payment } from "@/lib/types";
@@ -50,7 +51,7 @@ export default function Pagamentos() {
       toast.success("Pagamento excluído");
       setDeleting(null);
     },
-    onError: () => toast.error("Não foi possível excluir o pagamento"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível excluir o pagamento")),
   });
 
   const payments = isError ? [] : (data ?? []);

@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiDelete, apiGet } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { useCharge } from "@/lib/charge";
 import { brl, dueLabel, fullDate } from "@/lib/format";
 import { SITUATION_LABELS, SITUATION_STYLES } from "@/lib/types";
@@ -82,7 +83,7 @@ export default function Clientes() {
       toast.success("Cliente excluído");
       setDeleting(null);
     },
-    onError: () => toast.error("Não foi possível excluir o cliente"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível excluir o cliente")),
   });
 
   const clients = isError ? [] : (data ?? []);

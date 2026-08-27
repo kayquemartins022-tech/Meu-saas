@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,16 +20,22 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiPost, apiPut } from "@/lib/api";
+import { errorMessage, parseMoney } from "@/lib/errors";
 import { todayIso } from "@/lib/format";
 import type { Client, ClientInput } from "@/lib/types";
 
-const empty = (): ClientInput => ({
+interface FormState extends Omit<ClientInput, "plan_value"> {
+  /** Kept as a string so pt-BR input ("150,50") survives until submit. */
+  plan_value: string;
+}
+
+const empty = (): FormState => ({
   name: "",
   phone: "",
   whatsapp: "",
   email: "",
   service: "",
-  plan_value: 0,
+  plan_value: "",
   next_due_date: todayIso(5),
   status: "ativo",
   notes: "",
@@ -48,7 +53,7 @@ export default function ClientModal({
   client?: Client | null;
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState<ClientInput>(empty());
+  const [form, setForm] = useState<FormState>(empty());
 
   useEffect(() => {
     if (!open) return;
@@ -60,7 +65,7 @@ export default function ClientModal({
             whatsapp: client.whatsapp,
             email: client.email,
             service: client.service,
-            plan_value: client.plan_value,
+            plan_value: String(client.plan_value ?? 0),
             next_due_date: client.next_due_date,
             status: client.status,
             notes: client.notes,
@@ -70,24 +75,55 @@ export default function ClientModal({
   }, [open, client]);
 
   const mutation = useMutation({
-    mutationFn: () =>
-      client
-        ? apiPut<Client>(`/clients/${client.id}`, form)
-        : apiPost<Client>("/clients", form),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["clients"] });
-      await qc.invalidateQueries({ queryKey: ["dashboard"] });
-      if (client) await qc.invalidateQueries({ queryKey: ["client", client.id] });
-      toast.success(client ? "Cliente atualizado" : "Cliente cadastrado");
+    mutationFn: () => {
+      const payload: ClientInput = {
+        ...form,
+        name: form.name.trim(),
+        plan_value: parseMoney(form.plan_value),
+        next_due_date: form.next_due_date || todayIso(),
+      };
+      return client
+        ? apiPut<Client>(`/clients/${client.id}`, payload)
+        : apiPost<Client>("/clients", payload);
+    },
+    onSuccess: async (saved) => {
+      // Refresh the list and the dashboard counters before closing, so the new client
+      // is already visible when the modal disappears.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["clients"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+        client
+          ? qc.invalidateQueries({ queryKey: ["client", client.id] })
+          : Promise.resolve(),
+      ]);
+      toast.success(client ? "Cliente atualizado" : `${saved.name} foi cadastrado`);
       onOpenChange(false);
     },
-    onError: () => toast.error("Não foi possível salvar o cliente"),
+    onError: (err) =>
+      toast.error(errorMessage(err, "Não foi possível salvar o cliente")),
   });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      toast.error("Informe o nome do cliente");
+      return;
+    }
+    mutation.mutate();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg" data-testid="client-modal">
-        <DialogHeader>
+      {/*
+        Mobile-safe sheet: the whole dialog is capped to the *dynamic* viewport (dvh, so
+        the browser chrome can't hide it), only the body scrolls, and the footer is pinned
+        so "Salvar" is always reachable without scrolling.
+      */}
+      <DialogContent
+        data-testid="client-modal"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[32rem] flex-col gap-0 overflow-hidden p-0 sm:w-full"
+      >
+        <DialogHeader className="shrink-0 space-y-1 border-b border-slate-200 px-5 py-4 text-left">
           <DialogTitle>{client ? "Editar cliente" : "Novo cliente"}</DialogTitle>
           <DialogDescription>
             Valor do plano e data de vencimento alimentam o painel automaticamente.
@@ -97,18 +133,13 @@ export default function ClientModal({
         <form
           id="client-form"
           data-testid="client-form"
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!form.name.trim()) {
-              toast.error("Informe o nome do cliente");
-              return;
-            }
-            mutation.mutate();
-          }}
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5"
+          onSubmit={submit}
         >
           <div className="space-y-2">
-            <Label htmlFor="c-name">Nome do cliente</Label>
+            <Label htmlFor="c-name">
+              Nome do cliente <span className="text-rose-600">*</span>
+            </Label>
             <Input
               id="c-name"
               required
@@ -179,14 +210,12 @@ export default function ClientModal({
               <Label htmlFor="c-value">Valor do plano (R$)</Label>
               <Input
                 id="c-value"
-                type="number"
-                min="0"
-                step="0.01"
                 inputMode="decimal"
                 data-testid="client-value-input"
+                placeholder="0,00"
                 className="h-11 font-mono"
-                value={String(form.plan_value)}
-                onChange={(e) => setForm({ ...form, plan_value: Number(e.target.value) })}
+                value={form.plan_value}
+                onChange={(e) => setForm({ ...form, plan_value: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -194,7 +223,6 @@ export default function ClientModal({
               <Input
                 id="c-due"
                 type="date"
-                required
                 data-testid="client-due-input"
                 className="h-11"
                 value={form.next_due_date}
@@ -236,26 +264,33 @@ export default function ClientModal({
           </div>
         </form>
 
-        <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            data-testid="client-cancel-button"
-            onClick={() => onOpenChange(false)}
-            className="h-11 rounded-xl font-semibold"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            form="client-form"
-            data-testid="client-save-button"
-            disabled={mutation.isPending}
-            className="h-11 rounded-xl bg-indigo-700 font-bold text-white hover:bg-indigo-800"
-          >
-            {mutation.isPending ? "Salvando…" : client ? "Salvar alterações" : "Cadastrar cliente"}
-          </Button>
-        </DialogFooter>
+        {/* Pinned action bar — never scrolls out of reach, clears the iOS home indicator. */}
+        <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="client-cancel-button"
+              onClick={() => onOpenChange(false)}
+              className="h-11 flex-1 rounded-xl font-semibold sm:flex-none sm:px-5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="client-form"
+              data-testid="client-save-button"
+              disabled={mutation.isPending}
+              className="h-11 flex-1 rounded-xl bg-indigo-700 font-bold text-white hover:bg-indigo-800"
+            >
+              {mutation.isPending
+                ? "Salvando…"
+                : client
+                  ? "Salvar alterações"
+                  : "Cadastrar cliente"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

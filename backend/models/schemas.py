@@ -1,9 +1,10 @@
 """Pydantic v2 models. Each has a hand-written TS mirror in frontend/src/lib/types.ts."""
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 def _uid() -> str:
@@ -55,7 +56,13 @@ class OnboardingInput(BaseModel):
     business_name: str = Field(min_length=1)
     owner_name: str = Field(min_length=1)
     segment: str = Field(min_length=1)
-    phone: str = Field(min_length=1)
+    # Optional on purpose: a blank phone must never block finishing the onboarding.
+    phone: str = ""
+
+    @field_validator("business_name", "owner_name", "segment", "phone", mode="before")
+    @classmethod
+    def _clean(cls, v: object) -> str:
+        return str(v).strip() if v is not None else ""
 
 
 class SettingsInput(BaseModel):
@@ -84,6 +91,50 @@ class ClientBase(BaseModel):
     status: str = "ativo"  # stored flag: ativo | inativo
     notes: str = ""
 
+    @field_validator("phone", "whatsapp", "email", "service", "notes", mode="before")
+    @classmethod
+    def _blank_string(cls, v: object) -> str:
+        """A cleared optional input arrives as null/undefined — treat it as empty, not an error."""
+        return "" if v is None else str(v).strip()
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _clean_name(cls, v: object) -> str:
+        return str(v).strip() if v is not None else ""
+
+    @field_validator("plan_value", mode="before")
+    @classmethod
+    def _coerce_value(cls, v: object) -> float:
+        """Accept null, "", "150,50" (pt-BR comma) and "R$ 150,50" without 422-ing."""
+        if v is None or v == "":
+            return 0.0
+        if isinstance(v, (int, float)):
+            return float(v)
+        cleaned = re.sub(r"[^\d,.\-]", "", str(v))
+        if cleaned.count(",") and cleaned.count("."):
+            cleaned = cleaned.replace(".", "").replace(",", ".")
+        else:
+            cleaned = cleaned.replace(",", ".")
+        try:
+            return float(cleaned)
+        except ValueError:
+            return 0.0
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _clean_status(cls, v: object) -> str:
+        value = str(v).strip().lower() if v is not None else "ativo"
+        return value if value in {"ativo", "inativo"} else "ativo"
+
+    @field_validator("next_due_date", mode="before")
+    @classmethod
+    def _clean_due(cls, v: object) -> str:
+        """Empty date falls back to today rather than rejecting the whole save."""
+        raw = str(v).strip() if v is not None else ""
+        if not raw:
+            return datetime.now(timezone.utc).date().isoformat()
+        return raw[:10]
+
 
 class ClientCreate(ClientBase):
     pass
@@ -107,12 +158,30 @@ class PaymentCreate(BaseModel):
     notes: str = ""
     advance_due_date: bool = True
 
+    _coerce_amount = field_validator("amount", mode="before")(
+        ClientBase._coerce_value.__func__  # reuse the pt-BR tolerant number parser
+    )
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def _blank_notes(cls, v: object) -> str:
+        return "" if v is None else str(v).strip()
+
 
 class PaymentUpdate(BaseModel):
     amount: float
     method: str = "pix"
     paid_at: str
     notes: str = ""
+
+    _coerce_amount = field_validator("amount", mode="before")(
+        ClientBase._coerce_value.__func__
+    )
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def _blank_notes(cls, v: object) -> str:
+        return "" if v is None else str(v).strip()
 
 
 class Payment(BaseModel):

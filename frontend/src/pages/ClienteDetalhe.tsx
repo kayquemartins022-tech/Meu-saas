@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { apiDelete, apiGet } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { useCharge } from "@/lib/charge";
 import { brl, dueLabel, fullDate } from "@/lib/format";
 import {
@@ -93,7 +94,7 @@ export default function ClienteDetalhe() {
       toast.success("Cliente excluído");
       navigate("/app/clientes", { replace: true });
     },
-    onError: () => toast.error("Não foi possível excluir o cliente"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível excluir o cliente")),
   });
 
   const removePayment = useMutation({
@@ -105,7 +106,7 @@ export default function ClienteDetalhe() {
       toast.success("Pagamento excluído");
       setDeletingPayment(null);
     },
-    onError: () => toast.error("Não foi possível excluir o pagamento"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível excluir o pagamento")),
   });
 
   const client = data?.client;

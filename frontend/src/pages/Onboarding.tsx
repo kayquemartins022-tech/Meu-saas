@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiPost } from "@/lib/api";
+import { errorMessage, isAuthError } from "@/lib/errors";
 import { useAuthStatus, useSessionActions } from "@/lib/session";
 import { SEGMENTOS } from "@/lib/types";
 import type { UserPublic } from "@/lib/types";
@@ -40,13 +41,24 @@ export default function Onboarding() {
   });
 
   const mutation = useMutation({
-    mutationFn: () => apiPost<UserPublic>("/auth/onboarding", form),
+    mutationFn: () =>
+      apiPost<UserPublic>("/auth/onboarding", {
+        business_name: form.business_name.trim(),
+        owner_name: form.owner_name.trim(),
+        segment: form.segment.trim(),
+        phone: form.phone.trim(),
+      }),
     onSuccess: (updated) => {
       beginSession(updated);
       toast.success("Tudo pronto! Bem-vindo ao ClientePro.");
       navigate("/app/dashboard", { replace: true });
     },
-    onError: () => toast.error("Não foi possível salvar os dados"),
+    onError: (err) => {
+      // Surface the real reason instead of a generic message, and send an expired
+      // session back to the login screen instead of dead-ending the onboarding.
+      toast.error(errorMessage(err, "Não foi possível salvar os dados"));
+      if (isAuthError(err)) navigate("/login", { replace: true });
+    },
   });
 
   if (status === "loading" || status === "error") {
@@ -65,7 +77,8 @@ export default function Onboarding() {
   const Icon = current.icon;
 
   const advance = () => {
-    if (!value.trim()) {
+    // Phone is optional — a blank one must not dead-end the last step.
+    if (current.key !== "phone" && !value.trim()) {
       toast.error("Preencha este campo para continuar");
       return;
     }

@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { errorMessage, parseMoney } from "@/lib/errors";
 import { brl, todayIso } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/types";
 import type { Client, Payment } from "@/lib/types";
@@ -77,14 +78,14 @@ export default function PaymentDialog({
     mutationFn: () =>
       payment
         ? apiPut<Payment>(`/payments/${payment.id}`, {
-            amount: Number(amount),
+            amount: parseMoney(amount),
             method,
             paid_at: paidAt,
             notes,
           })
         : apiPost<Payment>("/payments", {
             client_id: clientId,
-            amount: Number(amount),
+            amount: parseMoney(amount),
             method,
             paid_at: paidAt,
             notes,
@@ -102,7 +103,7 @@ export default function PaymentDialog({
       );
       onOpenChange(false);
     },
-    onError: () => toast.error("Não foi possível salvar o pagamento"),
+    onError: (err) => toast.error(errorMessage(err, "Não foi possível salvar o pagamento")),
   });
 
   const clientLabel = (id: string) =>
@@ -110,8 +111,11 @@ export default function PaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-md" data-testid="payment-modal">
-        <DialogHeader>
+      <DialogContent
+        data-testid="payment-modal"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[28rem] flex-col gap-0 overflow-hidden p-0 sm:w-full"
+      >
+        <DialogHeader className="shrink-0 space-y-1 border-b border-slate-200 px-5 py-4 text-left">
           <DialogTitle>{editing ? "Editar pagamento" : "Registrar pagamento"}</DialogTitle>
           <DialogDescription>
             {editing
@@ -123,14 +127,14 @@ export default function PaymentDialog({
         <form
           id="payment-form"
           data-testid="payment-form"
-          className="space-y-4"
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5"
           onSubmit={(e) => {
             e.preventDefault();
             if (!clientId) {
               toast.error("Selecione um cliente");
               return;
             }
-            if (Number(amount) <= 0) {
+            if (parseMoney(amount) <= 0) {
               toast.error("Informe um valor maior que zero");
               return;
             }
@@ -257,13 +261,13 @@ export default function PaymentDialog({
           ) : null}
         </form>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="shrink-0 gap-2 border-t border-slate-200 bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             variant="outline"
             data-testid="payment-cancel-button"
             onClick={() => onOpenChange(false)}
-            className="h-11 rounded-xl font-semibold"
+            className="h-11 flex-1 rounded-xl font-semibold sm:flex-none sm:px-5"
           >
             Cancelar
           </Button>
@@ -272,7 +276,7 @@ export default function PaymentDialog({
             form="payment-form"
             data-testid="payment-save-button"
             disabled={mutation.isPending}
-            className="h-11 rounded-xl bg-indigo-700 font-bold text-white hover:bg-indigo-800"
+            className="h-11 flex-1 rounded-xl bg-indigo-700 font-bold text-white hover:bg-indigo-800"
           >
             {mutation.isPending ? "Salvando…" : editing ? "Salvar alterações" : "Registrar pagamento"}
           </Button>

@@ -1,0 +1,281 @@
+{
+  "project_name": "ClientePro",
+  "archetype": "THE PRECISION FINTECH & TRUST ARCHETYPE",
+  "theme": "Light theme by default with crisp contrast, clean borders, professional indigo/blue accents, and rich dark charcoal details",
+  "colors": {
+    "primary_indigo": "#4338CA",
+    "primary_indigo_hover": "#3730A3",
+    "primary_indigo_light": "#EEF2FF",
+    "accent_blue": "#2563EB",
+    "accent_emerald": "#059669",
+    "accent_amber": "#D97706",
+    "accent_rose": "#E11D48",
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#F8FAFC",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "link": "#4338CA",
+          "error": "#E11D48",
+          "success": "#059669",
+          "warning": "#D97706"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "border": "#E2E8F0",
+          "hover_row": "#F1F5F9",
+          "link": "#4338CA"
+        }
+      },
+      {
+        "name": "sidebar_desktop",
+        "kind": "solid",
+        "bg": "#0F172A",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "active_item_bg": "#1E293B",
+          "active_item_text": "#38BDF8",
+          "border": "#1E293B"
+        }
+      },
+      {
+        "name": "hero_banner",
+        "kind": "solid",
+        "bg": "#0F172A",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#CBD5E1",
+        "roles": {
+          "badge_bg": "rgba(67, 56, 202, 0.4)",
+          "badge_text": "#C7D2FE",
+          "accent_highlight": "#818CF8"
+        }
+      },
+      {
+        "name": "card_overdue",
+        "kind": "solid",
+        "bg": "#FFF1F2",
+        "on_bg": "#9F1239",
+        "on_bg_muted": "#BE123C"
+      },
+      {
+        "name": "card_due_soon",
+        "kind": "solid",
+        "bg": "#FFFBEB",
+        "on_bg": "#92400E",
+        "on_bg_muted": "#B45309"
+      },
+      {
+        "name": "card_revenue",
+        "kind": "solid",
+        "bg": "#ECFDF5",
+        "on_bg": "#065F46",
+        "on_bg_muted": "#047857"
+      },
+      {
+        "name": "mobile_bottom_bar",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#0F172A",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "active_icon": "#4338CA",
+          "border_top": "#E2E8F0"
+        }
+      }
+    ],
+    "accent": "#4338CA",
+    "on_accent": "#FFFFFF"
+  },
+  "typography": {
+    "font_heading": "Plus Jakarta Sans, sans-serif",
+    "font_body": "Plus Jakarta Sans, sans-serif",
+    "font_mono": "JetBrains Mono, monospace",
+    "import_rule": "@import \"@fontsource-variable/plus-jakarta-sans\";\n@import \"@fontsource-variable/jetbrains-mono\";",
+    "scale_px": {
+      "display": 56,
+      "h1": 40,
+      "h2": 30,
+      "h3": 22,
+      "h4": 18,
+      "body": 16,
+      "caption": 14,
+      "badge_tiny": 12
+    },
+    "rules": {
+      "headlines": "font-bold tracking-tight text-slate-900 leading-tight",
+      "numbers_kpi": "font-mono font-extrabold tracking-tight text-slate-900",
+      "labels": "font-semibold text-xs uppercase tracking-wider text-slate-500",
+      "body": "text-slate-600 leading-relaxed text-sm md:text-base"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split marketing hero — high-impact headline & problem agitation left, live interactive interactive preview card right with customer badge proof",
+    "/login": "branded split auth — trust positioning panel & value prop left, secure clean login form right",
+    "/register": "branded split auth — value prop & quick setup promise left, registration form right",
+    "/recuperar-senha": "centered branded card with return to login flow",
+    "/onboarding": "distraction-free 4-step wizard card with progress indicator and business personalization fields",
+    "/app/dashboard": "full SaaS application shell with dark desktop sidebar, sticky mobile header, mobile bottom nav, 6 KPI cards, upcoming maturities timeline, overdue alert table, and quick actions bar"
+  },
+  "layouts_and_grids": {
+    "desktop_shell": "Sidebar 260px fixed width + Topbar with user profile and quick search + Main scrollable content area max-w-7xl px-8 py-8",
+    "mobile_shell": "Sticky compact top header with ClientePro logo & notification bell + Fixed bottom navigation bar (5 primary items) + Content area px-4 py-6 pb-24 for seamless iPhone/Android thumb reach",
+    "dashboard_grid": "Grid 1 cols on mobile, 2 cols on tablet (md), 3 cols on desktop (lg:grid-cols-3) for the 6 primary KPI cards (Clientes Ativos, Vencendo Hoje, Vencendo em Breve, Vencidos, Faturamento do Mês, Pagamentos Pendentes)",
+    "dashboard_sections": "2-column layout on desktop: Left column (col-span-2) with 'Próximos Vencimentos' + 'Tabela de Clientes Atrasados' with one-click Cobrança WhatsApp; Right column (col-span-1) with 'Ações Rápidas' & 'Resumo Financeiro Rápido'",
+    "clients_crud_layout": "Header with 'Novo Cliente' CTA + Search bar with filter chips (Todos, Ativos, Vencendo, Em Atraso, Inativos) + Mobile responsive card/table view with direct WhatsApp & status actions + Add/Edit Sheet Dialog"
+  },
+  "motion_and_interactions": {
+    "framework": "motion/react (bundled)",
+    "entrance": "Staggered fade-in-up (opacity: 0, y: 12 -> opacity: 1, y: 0) with 0.25s duration",
+    "buttons": "hover:scale-[1.02] active:scale-[0.98] transition-transform duration-150 ease-out shadow-sm hover:shadow-md",
+    "cards": "hover:border-indigo-300 hover:shadow-md transition-all duration-200",
+    "mobile_drawer": "Smooth slide-in sheet from bottom/left with spring physics",
+    "toasts": "Sonner with richColors for quick confirmation of CRUD operations, WhatsApp link copy, and payment registrations"
+  },
+  "accessibility": {
+    "touch_targets": "Minimum 44px x 44px on all interactive mobile buttons and navigation items",
+    "contrast_check": "Every text token complies with WCAG AA 4.5:1 ratio",
+    "data_testids": "All interactive buttons, inputs, filter tabs, modal triggers, and KPI metric containers MUST have explicit kebab-case data-testid attributes",
+    "screen_readers": "Descriptive aria-labels on icon-only actions (e.g., WhatsApp button, delete client, edit client, close modal)"
+  },
+  "image_urls": {
+    "hero_mockup": {
+      "url": "https://images.unsplash.com/photo-1546621083-17f1e50980e9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjbGVhbiUyMG1pbmltYWwlMjBkYXNoYm9hcmQlMjBhbmFseXRpY3MlMjBhcHAlMjBwcmV2aWV3fGVufDB8fHx8MTc4Nzc4OTY4N3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "ClientePro app interface preview on mobile smartphone",
+      "placement": "Landing page hero demonstration & mobile showcase section"
+    },
+    "testimonial_owners": [
+      {
+        "url": "https://images.unsplash.com/photo-1563649685437-a79731028cd1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwzfHxicmF6aWxpYW4lMjBidXNpbmVzcyUyMG93bmVyJTIwc21pbGluZ3xlbnwwfHx8fDE3ODc3ODk2ODd8MA&ixlib=rb-4.1.0&q=85",
+        "name": "Carlos Eduardo Silva",
+        "role": "Proprietário de Academia & Personal Trainer",
+        "text": "Antes eu esquecia quem estava em atraso e perdia mais de R$ 2.000 por mês. Com o ClientePro, meus lembretes saem automáticos e recebo em dia."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1694185766501-487b73d10332?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwyfHxicmF6aWxpYW4lMjBidXNpbmVzcyUyMG93bmVyJTIwc21pbGluZ3xlbnwwfHx8fDE3ODc3ODk2ODd8MA&ixlib=rb-4.1.0&q=85",
+        "name": "Mariana Ramos",
+        "role": "Consultoria & Serviços de Estética",
+        "text": "Interface limpa, rápida no celular e sem complicações. Adiciono os clientes em segundos e controlo todos os vencimentos."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1536548665027-b96d34a005ae?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxicmF6aWxpYW4lMjBidXNpbmVzcyUyMG93bmVyJTIwc21pbGluZ3xlbnwwfHx8fDE3ODc3ODk2ODd8MA&ixlib=rb-4.1.0&q=85",
+        "name": "Rafael Menezes",
+        "role": "Agência Digital & Manutenção Mensal",
+        "text": "O painel de cobrança rápida com mensagem personalizada para o WhatsApp facilitou demais a rotina do meu negócio."
+      }
+    ]
+  },
+  "component_structure": {
+    "routes": [
+      {
+        "path": "/",
+        "component": "@/pages/LandingPage.tsx",
+        "description": "Public high-converting landing page with Hero, Benefícios, Funcionalidades, Como Funciona, Planos (Mensal/Anual), FAQ interativo, e CTA final"
+      },
+      {
+        "path": "/login",
+        "component": "@/pages/Login.tsx",
+        "description": "Clean auth login with persistency, test credentials quick-fill helper, and link to recovery"
+      },
+      {
+        "path": "/cadastro",
+        "component": "@/pages/Register.tsx",
+        "description": "New account signup redirecting to /onboarding"
+      },
+      {
+        "path": "/recuperar-senha",
+        "component": "@/pages/ForgotPassword.tsx",
+        "description": "Password reset flow simulator with clean feedback"
+      },
+      {
+        "path": "/onboarding",
+        "component": "@/pages/Onboarding.tsx",
+        "description": "4-field onboarding: 1. Nome do Negócio, 2. Nome do Responsável, 3. Segmento (Select com opções comuns no Brasil), 4. Telefone/WhatsApp"
+      },
+      {
+        "path": "/app/dashboard",
+        "component": "@/pages/Dashboard.tsx",
+        "description": "Main control center: 6 KPI Cards, Próximos Vencimentos, Clientes em Atraso com disparador WhatsApp, e Ações Rápidas (Adicionar Cliente, Registrar Pagamento, Enviar Cobrança)"
+      },
+      {
+        "path": "/app/clientes",
+        "component": "@/pages/Clientes.tsx",
+        "description": "Full CRUD for clients with search, status filters (Ativo, Pendente, Atrasado, Inativo), WhatsApp direct click, Add/Edit modal dialog and delete confirmation"
+      },
+      {
+        "path": "/app/pagamentos",
+        "component": "@/pages/Pagamentos.tsx",
+        "description": "Histórico e registro de pagamentos recebidos e pendentes com status visual e recibos"
+      },
+      {
+        "path": "/app/financeiro",
+        "component": "@/pages/Financeiro.tsx",
+        "description": "Visão financeira consolidada com gráficos Recharts de faturamento mensal e projeção de recebimentos"
+      },
+      {
+        "path": "/app/calendario",
+        "component": "@/pages/Calendario.tsx",
+        "description": "Visualização de vencimentos em formato calendário e lista por data"
+      },
+      {
+        "path": "/app/lembretes",
+        "component": "@/pages/Lembretes.tsx",
+        "description": "Configuração e disparo de lembretes automáticos e templates de cobrança amigável via WhatsApp"
+      },
+      {
+        "path": "/app/relatorios",
+        "component": "@/pages/Relatorios.tsx",
+        "description": "Relatórios de retenção de clientes, inadimplência e faturamento exportáveis"
+      },
+      {
+        "path": "/app/configuracoes",
+        "component": "@/pages/Configuracoes.tsx",
+        "description": "Dados da empresa, dados do responsável, dados de cobrança Pix/Boleto e preferências de notificação"
+      }
+    ],
+    "shell_components": [
+      "@/components/layout/AppShell.tsx (Manages desktop dark sidebar, mobile topbar, mobile bottom navigation bar, and active user context)",
+      "@/components/layout/Sidebar.tsx (Desktop navigation with 8 items + Business identity badge + Logout button)",
+      "@/components/layout/MobileNav.tsx (Bottom sticky navigation optimized for mobile thumb reach + quick add button)",
+      "@/components/dashboard/KpiCard.tsx (High polish metric card with indicator, delta, and icon)",
+      "@/components/dashboard/QuickActions.tsx (Action buttons with modals for quick registration and reminders)",
+      "@/components/dashboard/DueList.tsx (Timeline list of upcoming client billing dates)",
+      "@/components/dashboard/OverdueTable.tsx (Urgent overdue clients with one-click WhatsApp message builder)",
+      "@/components/clientes/ClientModal.tsx (Create / Edit client sheet with validation, price, due day, and status)"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Template is farm-ts (FastAPI backend + React 19 / Vite frontend). Tailwind v4 is in frontend/src/index.css.",
+    "Do not build a simple landing page only. Build a completely functional, solid SaaS app with full client CRUD, interactive Dashboard, authentication with persistent state, onboarding wizard, and responsive mobile-first shell.",
+    "Implement Portuguese (pt-BR) as the primary interface language throughout the app and landing page.",
+    "For the Landing Page, use the specified title: 'Pare de perder clientes por esquecer vencimentos.' with clear call-to-actions, feature highlights, and pricing plans (ex: Plano Mensal R$ 49/mês e Plano Anual R$ 39/mês).",
+    "Onboarding must capture: 1. Nome do negócio, 2. Nome do responsável, 3. Segmento, 4. Telefone.",
+    "Shell navigation MUST contain all 8 sections: Dashboard, Clientes, Pagamentos, Financeiro, Calendário, Lembretes, Relatórios, Configurações. Clientes is full CRUD with real persistence; other secondary sections should have rich interactive features/views rather than empty screens.",
+    "Include Quick Actions in the Dashboard: 'Adicionar cliente', 'Registrar pagamento', and 'Enviar cobrança' (generating customizable WhatsApp pre-filled text with client name and amount).",
+    "Mobile Responsiveness: Test on mobile viewport (375px-430px) ensuring touch targets are 44px+ and bottom nav is comfortable.",
+    "Ensure all interactive items have data-testid attributes for automated testing."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy and crisp 1px borders.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) only for sticky headers, never transparent dropdowns.",
+    "You MUST NOT apply universal transition (e.g. transition: all). This breaks transforms. Always add transitions for specific interactive elements.",
+    "You MUST NOT center align the app container. Keep natural left-aligned reading rhythm for dashboards and forms.",
+    "Always use modern button styles like pill-shaped or subtle rounded-xl with interaction animations & color relevant to the app style.",
+    "NEVER use AI assistant Emoji characters (🤖🧠💭💡🔮🎯) for icons. Use clean Lucide icons.",
+    "Every interaction needs micro-animations: hover states, active press states, smooth tab transitions, and entrance staggered effects.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "All interactive elements MUST include a data-testid attribute."
+  ]
+}

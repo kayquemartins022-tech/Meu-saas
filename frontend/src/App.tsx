@@ -7,6 +7,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
+import ClienteDetalhe from "@/pages/ClienteDetalhe";
 import Pagamentos from "@/pages/Pagamentos";
 import Configuracoes from "@/pages/Configuracoes";
 import { Calendario, Financeiro, Lembretes, Relatorios } from "@/pages/Secondary";
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
         <Route path="/app/dashboard" element={<Dashboard />} />
         <Route path="/app/clientes" element={<Clientes />} />
+        <Route path="/app/clientes/:id" element={<ClienteDetalhe />} />
         <Route path="/app/pagamentos" element={<Pagamentos />} />
         <Route path="/app/financeiro" element={<Financeiro />} />
         <Route path="/app/calendario" element={<Calendario />} />

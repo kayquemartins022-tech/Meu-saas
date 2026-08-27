@@ -19,7 +19,8 @@ import ClientModal from "@/components/clientes/ClientModal";
 import PaymentDialog from "@/components/pagamentos/PaymentDialog";
 import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
-import { brl, cobrancaMessage, dueLabel, fullDate, whatsappLink } from "@/lib/format";
+import { useCharge } from "@/lib/charge";
+import { brl, dueLabel, fullDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import type { DashboardSummary, DueItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -100,7 +101,13 @@ function DueRow({ item, onCharge }: { item: DueItem; onCharge: (item: DueItem) =
       className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 transition-colors duration-150 hover:border-indigo-300"
     >
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold text-slate-900">{item.name}</p>
+        <Link
+          to={`/app/clientes/${item.id}`}
+          data-testid={`due-row-open-${item.id}`}
+          className="truncate text-sm font-bold text-slate-900 hover:text-indigo-700"
+        >
+          {item.name}
+        </Link>
         <p className="mt-0.5 text-xs text-slate-500">
           {fullDate(item.next_due_date)} · {brl(item.plan_value)}
         </p>
@@ -163,18 +170,10 @@ export default function Dashboard() {
   });
   const [clientOpen, setClientOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const charge = useCharge();
 
   const businessName = user?.business_name ?? "Meu negócio";
   const summary = isError ? undefined : data;
-
-  const charge = (item: DueItem) => {
-    const message = cobrancaMessage(businessName, item.name, item.plan_value, item.next_due_date);
-    if (!item.phone) {
-      void navigator.clipboard?.writeText(message);
-      return;
-    }
-    window.open(whatsappLink(item.phone, message), "_blank", "noopener");
-  };
 
   const kpis = [
     {
@@ -335,7 +334,7 @@ export default function Dashboard() {
                   const target =
                     summary?.clientes_atrasados[0] ?? summary?.proximos_vencimentos[0] ?? null;
                   if (!target) return;
-                  charge(target);
+                  void charge(target);
                 }}
                 className="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3.5 text-left transition-colors duration-150 hover:border-sky-300 hover:bg-sky-50/50"
               >

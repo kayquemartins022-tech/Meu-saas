@@ -7,6 +7,7 @@ export interface UserPublic {
   owner_name: string | null;
   segment: string | null;
   phone: string | null;
+  pix_key: string | null;
   onboarded: boolean;
 }
 
@@ -19,13 +20,23 @@ export interface ResetTokenOut {
   message: string;
 }
 
+export interface SettingsInput {
+  business_name: string;
+  owner_name: string;
+  segment: string;
+  phone: string;
+  pix_key: string;
+}
+
 export interface ClientInput {
   name: string;
   phone: string;
+  whatsapp: string;
   email: string;
+  service: string;
   plan_value: number;
   next_due_date: string;
-  status: string;
+  status: string; // ativo | inativo
   notes: string;
 }
 
@@ -33,7 +44,11 @@ export interface Client extends ClientInput {
   id: string;
   user_id: string;
   created_at: string;
+  situation: Situation;
+  days: number;
 }
+
+export type Situation = "ativo" | "vencendo_hoje" | "vence_em_breve" | "vencido" | "inativo";
 
 export interface Payment {
   id: string;
@@ -43,7 +58,33 @@ export interface Payment {
   amount: number;
   method: string;
   paid_at: string;
+  notes: string;
   created_at: string;
+}
+
+export interface PaymentUpdate {
+  amount: number;
+  method: string;
+  paid_at: string;
+  notes: string;
+}
+
+export interface Charge {
+  id: string;
+  user_id: string;
+  client_id: string;
+  kind: string; // lembrete | vencido
+  message: string;
+  channel: string;
+  created_at: string;
+}
+
+export interface ClientDetail {
+  client: Client;
+  payments: Payment[];
+  charges: Charge[];
+  total_paid: number;
+  payments_count: number;
 }
 
 export interface DueItem {
@@ -53,6 +94,7 @@ export interface DueItem {
   plan_value: number;
   next_due_date: string;
   days: number;
+  situation: Situation;
 }
 
 export interface DashboardSummary {
@@ -78,3 +120,28 @@ export const SEGMENTOS = [
   "Serviços",
   "Outro",
 ];
+
+export const PAYMENT_METHODS: Record<string, string> = {
+  pix: "PIX",
+  dinheiro: "Dinheiro",
+  cartao: "Cartão",
+  transferencia: "Transferência",
+  outro: "Outro",
+};
+
+export const SITUATION_LABELS: Record<Situation, string> = {
+  ativo: "Ativo",
+  vencendo_hoje: "Vencendo hoje",
+  vence_em_breve: "Vence em breve",
+  vencido: "Vencido",
+  inativo: "Inativo",
+};
+
+// Badge styling per derived situation — shared by the list, detail page and dashboard.
+export const SITUATION_STYLES: Record<Situation, string> = {
+  ativo: "bg-emerald-100 text-emerald-700",
+  vencendo_hoje: "bg-amber-100 text-amber-800",
+  vence_em_breve: "bg-indigo-100 text-indigo-700",
+  vencido: "bg-rose-100 text-rose-700",
+  inativo: "bg-slate-100 text-slate-500",
+};

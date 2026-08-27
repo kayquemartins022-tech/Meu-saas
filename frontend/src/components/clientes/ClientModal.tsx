@@ -27,7 +27,9 @@ import type { Client, ClientInput } from "@/lib/types";
 const empty = (): ClientInput => ({
   name: "",
   phone: "",
+  whatsapp: "",
   email: "",
+  service: "",
   plan_value: 0,
   next_due_date: todayIso(5),
   status: "ativo",
@@ -55,7 +57,9 @@ export default function ClientModal({
         ? {
             name: client.name,
             phone: client.phone,
+            whatsapp: client.whatsapp,
             email: client.email,
+            service: client.service,
             plan_value: client.plan_value,
             next_due_date: client.next_due_date,
             status: client.status,
@@ -73,6 +77,7 @@ export default function ClientModal({
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["clients"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      if (client) await qc.invalidateQueries({ queryKey: ["client", client.id] });
       toast.success(client ? "Cliente atualizado" : "Cliente cadastrado");
       onOpenChange(false);
     },
@@ -117,7 +122,7 @@ export default function ClientModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="c-phone">WhatsApp</Label>
+              <Label htmlFor="c-phone">Telefone</Label>
               <Input
                 id="c-phone"
                 inputMode="tel"
@@ -129,6 +134,21 @@ export default function ClientModal({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="c-whatsapp">WhatsApp</Label>
+              <Input
+                id="c-whatsapp"
+                inputMode="tel"
+                data-testid="client-whatsapp-input"
+                placeholder="Vazio = usa o telefone"
+                className="h-11"
+                value={form.whatsapp}
+                onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
               <Label htmlFor="c-email">E-mail</Label>
               <Input
                 id="c-email"
@@ -139,6 +159,17 @@ export default function ClientModal({
                 className="h-11"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="c-service">Serviço / produto</Label>
+              <Input
+                id="c-service"
+                data-testid="client-service-input"
+                placeholder="Ex.: Plano mensal"
+                className="h-11"
+                value={form.service}
+                onChange={(e) => setForm({ ...form, service: e.target.value })}
               />
             </div>
           </div>

@@ -29,16 +29,3 @@ export const dueLabel = (days: number) => {
 };
 
 export const digits = (value: string) => value.replace(/\D/g, "");
-
-export const whatsappLink = (phone: string, message: string) =>
-  `https://wa.me/${digits(phone)}?text=${encodeURIComponent(message)}`;
-
-export const cobrancaMessage = (
-  businessName: string,
-  clientName: string,
-  amount: number,
-  dueIso: string,
-) =>
-  `Olá, ${clientName}! Aqui é da ${businessName}. Passando para lembrar do pagamento de ${brl(
-    amount,
-  )} com vencimento em ${fullDate(dueIso)}. Qualquer dúvida, estou à disposição!`;

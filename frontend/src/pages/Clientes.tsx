@@ -1,7 +1,17 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MessageCircle, Pencil, Plus, Receipt, Search, Trash2, Users } from "lucide-react";
+import {
+  ChevronRight,
+  MessageCircle,
+  Pencil,
+  Plus,
+  Receipt,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import ClientModal from "@/components/clientes/ClientModal";
 import PaymentDialog from "@/components/pagamentos/PaymentDialog";
@@ -15,32 +25,42 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiDelete, apiGet } from "@/lib/api";
-import { brl, cobrancaMessage, dueLabel, fullDate, whatsappLink } from "@/lib/format";
-import { useSession } from "@/lib/session";
-import type { Client, MessageOut } from "@/lib/types";
+import { useCharge } from "@/lib/charge";
+import { brl, dueLabel, fullDate } from "@/lib/format";
+import { SITUATION_LABELS, SITUATION_STYLES } from "@/lib/types";
+import type { Client, MessageOut, Situation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
   { key: "todos", label: "Todos" },
   { key: "ativos", label: "Ativos" },
-  { key: "vencendo", label: "Vencendo" },
-  { key: "atraso", label: "Em atraso" },
+  { key: "vencendo_hoje", label: "Vencendo hoje" },
+  { key: "vence_em_breve", label: "Vence em breve" },
+  { key: "vencido", label: "Vencidos" },
   { key: "inativos", label: "Inativos" },
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number]["key"];
 
-const daysUntil = (iso: string) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(`${iso}T00:00:00`);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+const SORTS: Record<string, string> = {
+  vencimento: "Vencimento (mais próximo)",
+  nome: "Nome (A–Z)",
+  valor_desc: "Valor (maior primeiro)",
+  valor_asc: "Valor (menor primeiro)",
+  recentes: "Cadastro (mais recentes)",
 };
 
 export default function Clientes() {
   const qc = useQueryClient();
-  const { data: user } = useSession();
+  const charge = useCharge();
   const { data, isError, isLoading } = useQuery({
     queryKey: ["clients"],
     queryFn: () => apiGet<Client[]>("/clients"),
@@ -48,6 +68,7 @@ export default function Clientes() {
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("todos");
+  const [sort, setSort] = useState("vencimento");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [paymentFor, setPaymentFor] = useState<Client | null>(null);
@@ -66,37 +87,46 @@ export default function Clientes() {
 
   const clients = isError ? [] : (data ?? []);
 
-  const filtered = useMemo(() => {
+  const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return clients.filter((c) => {
-      if (term && !`${c.name} ${c.phone} ${c.email}`.toLowerCase().includes(term)) return false;
-      const days = daysUntil(c.next_due_date);
+    const filtered = clients.filter((c) => {
+      if (
+        term &&
+        !`${c.name} ${c.phone} ${c.whatsapp} ${c.email} ${c.service}`.toLowerCase().includes(term)
+      ) {
+        return false;
+      }
       switch (filter) {
         case "ativos":
           return c.status === "ativo";
         case "inativos":
-          return c.status === "inativo";
-        case "vencendo":
-          return c.status === "ativo" && days >= 0 && days <= 7;
-        case "atraso":
-          return c.status === "ativo" && days < 0;
+          return c.situation === "inativo";
+        case "vencendo_hoje":
+        case "vence_em_breve":
+        case "vencido":
+          return c.situation === filter;
         default:
           return true;
       }
     });
-  }, [clients, search, filter]);
 
-  const businessName = user?.business_name ?? "Meu negócio";
-
-  const charge = (c: Client) => {
-    const message = cobrancaMessage(businessName, c.name, c.plan_value, c.next_due_date);
-    if (!c.phone) {
-      toast.info("Cliente sem WhatsApp cadastrado. Mensagem copiada.");
-      void navigator.clipboard?.writeText(message);
-      return;
-    }
-    window.open(whatsappLink(c.phone, message), "_blank", "noopener");
-  };
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "nome":
+          return a.name.localeCompare(b.name, "pt-BR");
+        case "valor_desc":
+          return b.plan_value - a.plan_value;
+        case "valor_asc":
+          return a.plan_value - b.plan_value;
+        case "recentes":
+          return b.created_at.localeCompare(a.created_at);
+        default:
+          return a.next_due_date.localeCompare(b.next_due_date);
+      }
+    });
+    return sorted;
+  }, [clients, search, filter, sort]);
 
   return (
     <AppShell
@@ -116,15 +146,33 @@ export default function Clientes() {
       }
     >
       <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            data-testid="clientes-search-input"
-            placeholder="Buscar por nome, WhatsApp ou e-mail"
-            className="h-12 pl-10"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-col gap-3 md:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              data-testid="clientes-search-input"
+              placeholder="Buscar por nome, telefone, e-mail ou serviço"
+              className="h-12 pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select value={sort} onValueChange={(v: string) => setSort(v)}>
+            <SelectTrigger
+              data-testid="clientes-sort-select"
+              className="h-12 w-full md:w-[240px]"
+              aria-label="Ordenar clientes"
+            >
+              <SelectValue>{(v) => SORTS[v as string] ?? "Ordenar"}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(SORTS).map(([value, label]) => (
+                <SelectItem key={value} value={value} data-testid={`clientes-sort-${value}`}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {FILTERS.map((f) => (
@@ -144,6 +192,9 @@ export default function Clientes() {
             </button>
           ))}
         </div>
+        <p className="mt-3 text-xs text-slate-500" data-testid="clientes-result-count">
+          {visible.length} {visible.length === 1 ? "cliente" : "clientes"} listados
+        </p>
       </div>
 
       {isError ? (
@@ -156,9 +207,8 @@ export default function Clientes() {
       ) : null}
 
       <div className="mt-5 space-y-3" data-testid="clientes-list">
-        {filtered.map((c) => {
-          const days = daysUntil(c.next_due_date);
-          const inactive = c.status === "inativo";
+        {visible.map((c) => {
+          const situation = c.situation as Situation;
           return (
             <article
               key={c.id}
@@ -166,10 +216,14 @@ export default function Clientes() {
               className="rounded-2xl border border-slate-200 bg-white p-4 transition-[border-color,box-shadow] duration-200 hover:border-indigo-300 hover:shadow-sm md:p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1 basis-full sm:basis-0">
+                <Link
+                  to={`/app/clientes/${c.id}`}
+                  data-testid={`client-open-${c.id}`}
+                  className="group min-w-0 flex-1 basis-full sm:basis-0"
+                >
                   <div className="flex items-center gap-2">
                     <h3
-                      className="truncate text-base font-bold text-slate-900"
+                      className="truncate text-base font-bold text-slate-900 group-hover:text-indigo-700"
                       data-testid={`client-name-${c.id}`}
                     >
                       {c.name}
@@ -177,21 +231,16 @@ export default function Clientes() {
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                        inactive
-                          ? "bg-slate-100 text-slate-500"
-                          : days < 0
-                            ? "bg-rose-100 text-rose-700"
-                            : days === 0
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-700",
+                        SITUATION_STYLES[situation],
                       )}
+                      data-testid={`client-situation-${c.id}`}
                     >
-                      {inactive ? "inativo" : days < 0 ? "em atraso" : "ativo"}
+                      {SITUATION_LABELS[situation]}
                     </span>
+                    <ChevronRight className="size-4 shrink-0 text-slate-300 group-hover:text-indigo-500" />
                   </div>
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    {c.phone || "sem WhatsApp"}
-                    {c.email ? ` · ${c.email}` : ""}
+                  <p className="mt-1.5 truncate text-xs text-slate-500">
+                    {c.service || "sem serviço"} · {c.whatsapp || c.phone || "sem contato"}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5">
                     <span className="font-mono text-lg font-extrabold text-slate-900">
@@ -200,25 +249,29 @@ export default function Clientes() {
                     <span className="text-xs text-slate-500">
                       Vence {fullDate(c.next_due_date)}
                     </span>
-                    {!inactive ? (
+                    {c.status === "ativo" ? (
                       <span
                         className={cn(
                           "text-xs font-bold",
-                          days < 0 ? "text-rose-700" : days <= 7 ? "text-amber-700" : "text-slate-500",
+                          c.days < 0
+                            ? "text-rose-700"
+                            : c.days <= 7
+                              ? "text-amber-700"
+                              : "text-slate-500",
                         )}
                       >
-                        {dueLabel(days)}
+                        {dueLabel(c.days)}
                       </span>
                     ) : null}
                   </div>
-                </div>
+                </Link>
 
                 <div className="flex shrink-0 items-center gap-2 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
                   <button
                     type="button"
-                    aria-label={`Enviar cobrança para ${c.name}`}
+                    aria-label={`Cobrar ${c.name} pelo WhatsApp`}
                     data-testid={`client-charge-${c.id}`}
-                    onClick={() => charge(c)}
+                    onClick={() => void charge(c)}
                     className="grid size-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700 transition-colors duration-150 hover:bg-emerald-100"
                   >
                     <MessageCircle className="size-[18px]" />
@@ -264,7 +317,7 @@ export default function Clientes() {
           );
         })}
 
-        {!isLoading && filtered.length === 0 ? (
+        {!isLoading && visible.length === 0 ? (
           <div
             className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
             data-testid="clientes-empty-state"
@@ -303,7 +356,7 @@ export default function Clientes() {
             <DialogTitle>Excluir cliente</DialogTitle>
             <DialogDescription>
               {deleting
-                ? `“${deleting.name}” será removido permanentemente da sua carteira.`
+                ? `“${deleting.name}” e todo o histórico dele serão removidos permanentemente.`
                 : ""}
             </DialogDescription>
           </DialogHeader>

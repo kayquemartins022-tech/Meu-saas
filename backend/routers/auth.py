@@ -22,6 +22,7 @@ from models.schemas import (
     RegisterInput,
     ResetPasswordInput,
     ResetTokenOut,
+    SettingsInput,
     UserPublic,
 )
 
@@ -36,6 +37,7 @@ def _public(user: dict) -> UserPublic:
         owner_name=user.get("owner_name"),
         segment=user.get("segment"),
         phone=user.get("phone"),
+        pix_key=user.get("pix_key"),
         onboarded=bool(user.get("onboarded", False)),
     )
 
@@ -125,5 +127,12 @@ async def reset_password(payload: ResetPasswordInput):
 async def complete_onboarding(payload: OnboardingInput, user: dict = Depends(current_user)):
     updates = payload.model_dump()
     updates["onboarded"] = True
+    await db.users.update_one({"id": user["id"]}, {"$set": updates})
+    return _public({**user, **updates})
+
+
+@router.put("/settings", response_model=UserPublic)
+async def update_settings(payload: SettingsInput, user: dict = Depends(current_user)):
+    updates = payload.model_dump()
     await db.users.update_one({"id": user["id"]}, {"$set": updates})
     return _public({**user, **updates})
